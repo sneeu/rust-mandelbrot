@@ -1,5 +1,7 @@
 extern crate num;
 
+use std::thread;
+
 use num::Complex;
 use png;
 use std::fs::File;
@@ -46,21 +48,37 @@ fn to_file(width: u32, height: u32, filename: &str) {
     let mut writer = encoder.write_header().unwrap();
 
     let mut data = Vec::<u8>::new();
+    let mut handles = vec![];
 
     for yy in 0..height {
         let y = translate(0, height, -1.0, 1.0, yy);
 
-        for xx in 0..width {
-            let x = translate(0, width, -2.0, 1.0, xx);
+        let handle = thread::spawn(move || -> Vec<u8> {
+            let mut line = Vec::<u8>::new();
 
-            let m = mandelbrot(Complex::new(0.0, 0.0), Complex::new(x, y), 0);
+            println!("Thread {}", yy);
 
-            let colour = match m {
-                Some(n) => colour(n),
-                None => vec![255, 255, 255, 255],
-            };
-            data.extend_from_slice(&colour);
-        }
+            for xx in 0..width {
+                let x = translate(0, width, -2.0, 1.0, xx);
+
+                let m = mandelbrot(Complex::new(0.0, 0.0), Complex::new(x, y), 0);
+
+                let colour = match m {
+                    Some(n) => colour(n),
+                    None => vec![255, 255, 255, 255],
+                };
+                line.extend_from_slice(&colour);
+            }
+
+            line
+        });
+
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        let line = handle.join().unwrap();
+        data.extend_from_slice(&line);
     }
 
     writer.write_image_data(&data).unwrap();
