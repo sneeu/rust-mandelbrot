@@ -11,7 +11,7 @@ Learning some Rust by rendering the Mandelbrot set.
 
 ## TODO
 
-1. Parallelize
+1. ~~Parallelize~~
 2. Size on command-line
 3. Different colouring options
 4. Mandelbrot coordinates on command-line
